@@ -2,24 +2,33 @@
   description = "Python application packaged using poetry2nix";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-  inputs.poetry2nix.url = "github:nix-community/poetry2nix";
+  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.poetry2nix = {
+    url = "github:nix-community/poetry2nix";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
   outputs = {
     self,
     nixpkgs,
+    flake-utils,
     poetry2nix,
-  }: let
-    # TODO: We need to compile the agent in other architectures
-    system = "aarch64-darwin";
-    pkgs = nixpkgs.legacyPackages.${system};
-    # create a custom "mkPoetryApplication" API function that under the hood uses
-    # the packages and versions (python3, poetry etc.) from our pinned nixpkgs above:
-    inherit (poetry2nix.lib.mkPoetry2Nix {inherit pkgs;}) mkPoetryApplication;
-    myPythonApp = mkPoetryApplication {projectDir = ./.;};
-  in {
-    apps.${system}.default = {
-      type = "app";
-      program = "${myPythonApp}/bin/gordi-agent";
-    };
-  };
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+      p2nix = poetry2nix.lib.mkPoetry2Nix {inherit pkgs;};
+    in {
+      packages = {
+        default = self.packages.${system}.gordi-agent;
+        gordi-agent = p2nix.mkPoetryApplication {
+          projectDir = self;
+          overrides = p2nix.overrides.withDefaults (self: super: {
+            paho-mqtt = super.paho-mqtt.overridePythonAttrs (old: {
+              buildInputs = old.buildInputs or [] ++ [super.hatchling];
+            });
+          });
+        };
+      };
+    });
 }
