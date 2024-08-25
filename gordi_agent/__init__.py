@@ -16,22 +16,43 @@ FAN_TOPIC = "shellies/shellyswitch25-C45BBE7661F1/relay/1/command"
 BUTTON_TOPIC = "zigbee2mqtt/marc-magic-button"
 
 
-async def single_press_action(event):
+async def single_press_action(client, event):
     print("Single press detected!")
+    await client.publish(LIGHT_TOPIC, payload="toggle")
 
-async def hold_action(event):
-    print("Hold detected!")
+# A dictionary to keep track of ongoing delays for each client/event pair
+ongoing_delays = {}
+async def hold_action(client, event):
+    # Cancel any existing delay for this client/event
+    if client in ongoing_delays:
+        ongoing_delays[client].cancel()
+    
+    # Publish the initial "toggle" message
+    await client.publish(FAN_TOPIC, payload="toggle")
+    print("Hold detected! Published 'toggle'")
 
-async def single_press_action2(event):
+    # Define the coroutine for waiting and publishing "stop"
+    async def delayed_stop():
+        try:
+            await asyncio.sleep(20)
+            await client.publish(FAN_TOPIC, payload="off")
+            print("Published 'off'")
+        except asyncio.CancelledError:
+            print("Delay cancelled")
+
+    # Start the new delay coroutine and track it
+    ongoing_delays[client] = asyncio.create_task(delayed_stop())
+
+async def single_press_action2(client, event):
     print("foo bar")
 
-async def hold_action2(event):
+async def hold_action2(client, event):
     print("baz")
 
 async def listen(client: aiomqtt.Client, buttons):
     async for message in client.messages:
         event = json.loads(message.payload.decode().strip())
-        await asyncio.gather(*(button.handle_event(event) for button in buttons))
+        await asyncio.gather(*(button.handle_event(client, event) for button in buttons))
 
 # TODO: Add observer pattern to subscribe N devices to M topics
 
@@ -43,12 +64,13 @@ async def main():
         username=BROKER_USER,
         password=BROKER_PASS
     )
-    # Initialize the Button instance with the callbacks
-    button = Button(on_single=single_press_action, on_hold=hold_action)
-    button2 = Button(on_single=single_press_action2)
 
     # Connect to the MQTT broker and start subscribing to the topic
     async with client:
+        # Initialize the Button instance with the callbacks
+        button = Button(client, on_single=single_press_action, on_hold=hold_action)
+        button2 = Button(client, on_single=single_press_action2)
+
         await client.subscribe(BUTTON_TOPIC)
 
         # Use a task group to manage and await all worker tasks

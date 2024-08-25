@@ -9,6 +9,7 @@ class EventType(Enum):
 
 class Button:
     def __init__(self,
+                 client,
                  on_single: Optional[Callable] = None,
                  on_double: Optional[Callable] = None,
                  on_hold: Optional[Callable] = None,
@@ -18,7 +19,7 @@ class Button:
         self.handle_hold = on_hold
         self.handle_release = on_release
 
-    async def handle_event(self, event):
+    async def handle_event(self, client, event):
         try:
             event_type = EventType(event["action"])
         except ValueError:
@@ -28,14 +29,14 @@ class Button:
         match event_type:
             case EventType.SINGLE:
                 if self.handle_single:
-                    await self.handle_single(event)
+                    await self.handle_single(client, event)
             case EventType.DOUBLE:
                 if self.handle_double:
-                    await self.handle_double(event)
+                    await self.handle_double(client, event)
             case EventType.HOLD:
                 if self.handle_hold:
-                    await self.handle_hold(event)
+                    await self.handle_hold(client, event)
             case EventType.RELEASE:
                 if self.handle_release:
-                    await self.handle_release(event)
+                    await self.handle_release(client, event)
 
