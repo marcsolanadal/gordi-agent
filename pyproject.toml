@@ -4,10 +4,15 @@ version = "0.1.0"
 description = ""
 authors = ["Marc Solà Nadal <mail@marcsolanadal.com>"]
 readme = "README.md"
+packages = [
+    { include = "gordi_agent" },
+    { include = "devices" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
 paho-mqtt = "^2.1.0"
+aiomqtt = "^2.3.0"
 
 [tool.poetry.scripts]
 gordi-agent = "gordi_agent:main"

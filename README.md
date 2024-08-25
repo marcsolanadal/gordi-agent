@@ -7,19 +7,17 @@
 This repository is a proof of concept to test how difficult it is to automate the more stable parts of my home - like the shutters or fans.
 I also want to create a **Telegram bot** to control those automations.
 
-All my devices use MQTT as the communication protocol. I have two options with the programming language:
+All my devices use MQTT as the communication protocol.
 
-1. *Python*
+We're going to use **Python** as the language of choice. Here multiple reasons:
+
   - Easy and extensible
   - Good integration with AI
   - libraries: 
     - [`paho-mqtt`](https://pypi.org/project/paho-mqtt/)
+    - [`aiomqtt`](https://github.com/empicano/aiomqtt) -> paho-mqtt with asyncio
     - [`python-telegram-bot`](https://python-telegram-bot.org/)
-1. *Rust*
-  - Might serve as an excuse to finally learn `rust`.
-  - libraries:
-    - [`paho-mqtt`](https://github.com/eclipse/paho.mqtt.rust)
-    - [`teloxide`](https://github.com/teloxide/teloxide?tab=readme-ov-file)
+    - [`pyephem`](https://rhodesmill.org/pyephem/rise-set.html) -> astronomic positions
 
 One of the main motivators to use a programming language with only an MQTT client is to reduce complexity. 
 Right now, I have all my automations in Node-RED. 
@@ -28,3 +26,7 @@ I want to have absolute control over my automations, understand what they do at 
 
 The idea is to have this program running as a system service in my Nixos home automation machine (*casa*).
 
+## Questions
+
+- What is *wheel* when running `poetry build`?
+- In *NIX* what's the difference between `buildInputs` and `nativeBuildInputs`?

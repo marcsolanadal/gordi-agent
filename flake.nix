@@ -27,6 +27,15 @@
             paho-mqtt = super.paho-mqtt.overridePythonAttrs (old: {
               buildInputs = old.buildInputs or [] ++ [super.hatchling];
             });
+            aiomqtt = super.aiomqtt.overridePythonAttrs (
+              old: {
+                nativeBuildInputs =
+                  (old.nativeBuildInputs or [])
+                  ++ [
+                    self.poetry-dynamic-versioning
+                  ];
+              }
+            );
           });
         };
       };
